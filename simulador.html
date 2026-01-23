@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Simulador MRU y MRV</title>
+  <link rel="stylesheet" href="diseñoSimulador.css">
+</head>
+<body>
+
+<h1>Simulador de Movimiento Rectilíneo</h1>
+<p class="subtitulo">MRU y MRV con animación interactiva</p>
+
+<div class="contenedor">
+
+  <!-- PANEL DE CONTROLES -->
+  <div class="panel">
+    <h2>Controles</h2>
+
+    <label>Tipo de movimiento</label>
+    <select id="tipo" onchange="cambiarMovimiento()">
+      <option value="mru">MRU</option>
+      <option value="mrv">MRV</option>
+    </select>
+
+    <label>Objeto</label>
+    <select id="objetoTipo" onchange="cambiarObjeto()">
+      <option value="pelota">Pelota</option>
+      <option value="cubo">Cubo</option>
+      <option value="carro">Carro</option>
+    </select>
+
+    <label>Posición inicial (m)</label>
+    <input type="number" id="x0" value="0">
+
+    <label>Velocidad inicial (m/s)</label>
+    <input type="number" id="v0" value="5">
+
+    <div id="aceleracionGrupo">
+      <label>Aceleración (m/s²)</label>
+      <input type="number" id="a" value="1">
+    </div>
+
+    <label>Tiempo total (s)</label>
+    <input type="number" id="tiempoTotal" value="10">
+
+    <button onclick="iniciar()">Iniciar</button>
+    <button onclick="detener()" class="secundario">Detener</button>
+    <button onclick="reiniciar()" class="terciario">Reiniciar</button>
+  </div>
+
+  <!-- SIMULADOR -->
+  <div class="simulador-contenedor">
+
+    <div class="simulador">
+
+      <!-- PISTA -->
+      <div id="pista"></div>
+
+      <!-- OBJETOS SIMPLES -->
+      <div id="objeto" class="pelota"></div>
+
+      <!-- CARRO -->
+      <div id="car" class="car hidden">
+        <div class="roof"></div>
+        <div class="body"></div>
+        <div class="window w1"></div>
+        <div class="window w2"></div>
+        <div class="wheel w-left"></div>
+        <div class="wheel w-right"></div>
+      </div>
+
+    </div>
+
+    <!-- INFO AHORA DEBAJO DEL SIMULADOR -->
+    <div id="info" class="info"></div>
+
+  </div>
+
+</div>
+
+<script src="simulador.js"></script>
+</body>
+</html>

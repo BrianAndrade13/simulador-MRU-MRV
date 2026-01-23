@@ -1,0 +1,213 @@
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  margin: 0;
+  padding: 20px;
+  color: #fff;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 5px;
+}
+
+.subtitulo {
+  text-align: center;
+  opacity: 0.8;
+  margin-bottom: 30px;
+}
+
+.contenedor {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  flex-wrap: wrap;
+}
+
+/* ===== PANEL ===== */
+.panel {
+  background: #ffffff;
+  color: #333;
+  padding: 20px;
+  border-radius: 12px;
+  width: 260px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+.panel h2 {
+  text-align: center;
+  margin-bottom: 15px;
+}
+
+.panel label {
+  display: block;
+  margin-top: 10px;
+  font-weight: 600;
+}
+
+.panel input, .panel select {
+  width: 100%;
+  padding: 6px;
+  margin-top: 5px;
+}
+
+button {
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  background: #067e1a;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #089b34;
+}
+
+button.secundario {
+  background: #1005af;
+
+}
+  button.secundario:hover {
+    background: #1b2af8;
+  }
+
+button.terciario {
+  background:#be0505;
+}
+button.terciario:hover{
+  background: #ff1010;
+}
+/* ===== CONTENEDOR SIMULADOR ===== */
+.simulador-contenedor {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ===== SIMULADOR ===== */
+.simulador {
+  background: #fff;
+  width: 700px;
+  height: 180px;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+/* ===== PISTA ===== */
+#pista {
+  position: absolute;
+  top: 120px;
+  left: 0;
+  height: 4px;
+  background: #444;
+}
+
+/* marcas */
+.marca {
+  position: absolute;
+  top: -18px;
+  width: 2px;
+  height: 18px;
+  background: #444;
+}
+
+.marca span {
+  position: absolute;
+  top: -18px;
+  left: -12px;
+  font-size: 11px;
+  color: #000;
+}
+
+/* ===== INFO ===== */
+.info {
+  margin-top: 12px;
+  background: rgba(255,255,255,0.15);
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 15px;
+  min-width: 500px;
+  text-align: center;
+}
+
+/* ===== OBJETOS SIMPLES ===== */
+#objeto {
+  position: absolute;
+  top: 80px;
+  left: 0;
+}
+
+.pelota {
+  width: 40px;
+  height: 40px;
+  background: rgb(17, 6, 163);
+  border-radius: 50%;
+}
+
+.cubo {
+  width: 40px;
+  height: 40px;
+  background: #b30404;
+}
+
+/* ===== CARRO ===== */
+.car {
+  position: absolute;
+  left: 0;
+  top: 65px;
+  width: 90px;
+  height: 45px;
+}
+
+.hidden {
+  display: none;
+}
+
+.roof {
+  position: absolute;
+  left: 18px;
+  top: 0;
+  width: 54px;
+  height: 16px;
+  background: #c0392b;
+  border-radius: 8px 8px 0 0;
+}
+
+.body {
+  position: absolute;
+  left: 0;
+  top: 14px;
+  width: 90px;
+  height: 22px;
+  background: #e74c3c;
+  border-radius: 8px;
+}
+
+.window {
+  position: absolute;
+  top: 17px;
+  width: 18px;
+  height: 12px;
+  background: #aed6f1;
+  border-radius: 4px;
+}
+
+.w1 { left: 26px; }
+.w2 { left: 50px; }
+
+.wheel {
+  position: absolute;
+  bottom: 0;
+  width: 14px;
+  height: 14px;
+  background: #2c3e50;
+  border-radius: 50%;
+}
+
+.w-left { left: 14px; }
+.w-right { right: 14px; }
