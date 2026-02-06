@@ -1,83 +1,192 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Simulador MRU y MRV</title>
   <link rel="stylesheet" href="diseñoSimulador.css">
 </head>
 <body>
 
-<h1>Simulador de Movimiento Rectilíneo</h1>
-<p class="subtitulo">MRU y MRV con animación interactiva</p>
-
-<div class="contenedor">
-
-  <!-- PANEL DE CONTROLES -->
-  <div class="panel">
-    <h2>Controles</h2>
-
-    <label>Tipo de movimiento</label>
-    <select id="tipo" onchange="cambiarMovimiento()">
-      <option value="mru">MRU</option>
-      <option value="mrv">MRV</option>
-    </select>
-
-    <label>Objeto</label>
-    <select id="objetoTipo" onchange="cambiarObjeto()">
-      <option value="pelota">Pelota</option>
-      <option value="cubo">Cubo</option>
-      <option value="carro">Carro</option>
-    </select>
-
-    <label>Posición inicial (m)</label>
-    <input type="number" id="x0" value="0">
-
-    <label>Velocidad inicial (m/s)</label>
-    <input type="number" id="v0" value="5">
-
-    <div id="aceleracionGrupo">
-      <label>Aceleración (m/s²)</label>
-      <input type="number" id="a" value="1">
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="brand-dot"></div>
+      <div class="brand">
+        <div class="brand-title">Simulador MRU y MRV</div>
+        <div class="brand-sub">Movimiento Rectilíneo con animación + gráficas</div>
+      </div>
     </div>
 
-    <label>Tiempo total (s)</label>
-    <input type="number" id="tiempoTotal" value="10">
+    <div class="topbar-right">
+      <button id="btnStartTour" class="btn btn-soft">Guía</button>
+    </div>
+  </header>
 
-    <button onclick="iniciar()">Iniciar</button>
-    <button onclick="detener()" class="secundario">Detener</button>
-    <button onclick="reiniciar()" class="terciario">Reiniciar</button>
-  </div>
+  <main class="layout">
 
-  <!-- SIMULADOR -->
-  <div class="simulador-contenedor">
-
-    <div class="simulador">
-
-      <!-- PISTA -->
-      <div id="pista"></div>
-
-      <!-- OBJETOS SIMPLES -->
-      <div id="objeto" class="pelota"></div>
-
-      <!-- CARRO -->
-      <div id="car" class="car hidden">
-        <div class="roof"></div>
-        <div class="body"></div>
-        <div class="window w1"></div>
-        <div class="window w2"></div>
-        <div class="wheel w-left"></div>
-        <div class="wheel w-right"></div>
+    <!-- PANEL CONTROLES -->
+    <section class="card panel" id="panelControles">
+      <div class="panelHead">
+        <div class="card-title">Controles</div>
+        <div class="panelHint">Límites visibles para evitar errores</div>
       </div>
 
-    </div>
+      <div class="field">
+        <div class="labelRow">
+          <label for="tipo">Tipo de movimiento</label>
+          <span class="chip">MRU / MRV</span>
+        </div>
+        <select id="tipo">
+          <option value="mru">MRU</option>
+          <option value="mrv">MRV</option>
+        </select>
+      </div>
 
-    <!-- INFO AHORA DEBAJO DEL SIMULADOR -->
-    <div id="info" class="info"></div>
+      <div class="field">
+        <div class="labelRow">
+          <label for="objetoTipo">Objeto</label>
+          <span class="chip">visual</span>
+        </div>
+        <select id="objetoTipo">
+          <option value="pelota">Pelota</option>
+          <option value="cubo">Cubo</option>
+          <option value="carro">Carro</option>
+        </select>
+      </div>
 
-  </div>
+      <div class="grid2">
+        <div class="field">
+          <div class="labelRow">
+            <label for="x0">Posición inicial (m)</label>
+            <span class="limit">-1000 a 1000</span>
+          </div>
+          <input type="number" id="x0" value="0" step="0.1" min="-1000" max="1000">
+        </div>
 
-</div>
+        <div class="field">
+          <div class="labelRow">
+            <label for="v0">Velocidad inicial (m/s)</label>
+            <span class="limit">-500 a 500</span>
+          </div>
+          <input type="number" id="v0" value="5" step="0.1" min="-500" max="500">
+        </div>
+      </div>
 
-<script src="simulador.js"></script>
+      <div id="aceleracionGrupo" class="field">
+        <div class="labelRow">
+          <label for="a">Aceleración (m/s²)</label>
+          <span class="limit">-200 a 200</span>
+        </div>
+        <input type="number" id="a" value="1" step="0.1" min="-200" max="200">
+      </div>
+
+      <div class="field">
+        <div class="labelRow">
+          <label for="tiempoTotal">Tiempo total (s)</label>
+          <span class="limit">0.1 a 120</span>
+        </div>
+        <input type="number" id="tiempoTotal" value="10" step="0.1" min="0.1" max="120">
+        <div class="fieldNote" id="speedNote">Tip: si pasas de 60s, el simulador acelera para no tardar más de 1 minuto real.</div>
+      </div>
+
+      <div id="alertas" class="alertas" aria-live="polite"></div>
+
+      <div class="btnRow">
+        <button id="btnStart" class="btn btn-primary" type="button">Iniciar</button>
+        <button id="btnPause" class="btn btn-secondary" type="button">Detener</button>
+        <button id="btnReset" class="btn btn-danger" type="button">Reiniciar</button>
+      </div>
+    </section>
+
+    <!-- SIMULADOR + STATS + GRAFICA -->
+    <section class="rightCol">
+
+      <div class="card simCard">
+        <div class="simHead">
+          <div>
+            <div class="card-title">Simulación</div>
+            <div class="muted">Pista con cámara + objeto animado</div>
+          </div>
+          <div class="simBadges">
+            <span class="badge" id="badgeMode">MRU</span>
+            <span class="badge soft" id="badgeSpeed">1.0×</span>
+          </div>
+        </div>
+
+        <div class="simulador" id="simViewport">
+          <div id="pista"></div>
+
+          <div id="objeto" class="pelota"></div>
+
+          <div id="car" class="car hidden">
+            <div class="roof"></div>
+            <div class="body"></div>
+            <div class="window w1"></div>
+            <div class="window w2"></div>
+            <div class="wheel w-left"></div>
+            <div class="wheel w-right"></div>
+          </div>
+        </div>
+
+        <!-- Estadística bonita -->
+        <div id="info" class="info">
+          <div class="stat">
+            <div class="statTop">
+              <span class="statLabel">Tiempo</span>
+            </div>
+            <div class="statValue" id="statTime">—</div>
+            <div class="statUnit">s</div>
+          </div>
+
+          <div class="stat">
+            <div class="statTop">
+              <span class="statLabel">Posición</span>
+            </div>
+            <div class="statValue" id="statPos">—</div>
+            <div class="statUnit">m</div>
+          </div>
+
+          <div class="stat">
+            <div class="statTop">
+              <span class="statLabel">Velocidad</span>
+            </div>
+            <div class="statValue" id="statVel">—</div>
+            <div class="statUnit">m/s</div>
+          </div>
+
+          <div class="stat" id="statAccWrap">
+            <div class="statTop">
+              <span class="statLabel">Aceleración</span>
+            </div>
+            <div class="statValue" id="statAcc">—</div>
+            <div class="statUnit">m/s²</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card chartCard" id="chartCard">
+        <div class="chartHead">
+          <div>
+            <div class="card-title">Gráfica</div>
+            <div class="muted">x(t) y v(t) durante la simulación</div>
+          </div>
+          <div class="legend">
+            <span class="dot dot-x"></span><span>x(t)</span>
+            <span class="dot dot-v"></span><span>v(t)</span>
+          </div>
+        </div>
+
+        <canvas id="chart"></canvas>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- TOUR -->
+  <div id="tourOverlay" class="tour-overlay hidden"></div>
+  <div id="tourHighlight" class="tour-highlight hidden"></div>
+  <div id="tourTooltip" class="tour-tooltip hidden"></div>
+
+  <script src="main.js"></script>
 </body>
 </html>
