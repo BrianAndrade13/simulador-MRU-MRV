@@ -270,7 +270,10 @@ class Tour {
 }
 
 // ============================
-// Chart
+// Chart (mejorado: padding/ticks/legibilidad)
+// ============================
+// ============================
+// Chart (DOBLE EJE Y: x a la izquierda, v a la derecha)
 // ============================
 class Chart {
   constructor(canvas) {
@@ -295,12 +298,44 @@ class Chart {
     const rect = this.canvas.getBoundingClientRect();
     const w = Math.max(300, Math.round(rect.width));
     const h = Math.max(220, Math.round(rect.height));
-    const need = this.canvas.width !== Math.round(w * dpr) || this.canvas.height !== Math.round(h * dpr);
+    const need =
+      this.canvas.width !== Math.round(w * dpr) ||
+      this.canvas.height !== Math.round(h * dpr);
+
     if (need) {
       this.canvas.width = Math.round(w * dpr);
       this.canvas.height = Math.round(h * dpr);
       this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
+  }
+
+  #niceDecimalsForSpan(span) {
+    if (span >= 1000) return 0;
+    if (span >= 100) return 1;
+    if (span >= 10) return 2;
+    return 3;
+  }
+
+  #formatTick(val, decimals) {
+    return Number(val).toFixed(decimals);
+  }
+
+  #pickTickCount(px, minPxPerTick, minTicks, maxTicks) {
+    const raw = Math.floor(px / minPxPerTick);
+    return clamp(raw, minTicks, maxTicks);
+  }
+
+  #rangeWithPadding(arr) {
+    let mn = 0, mx = 1;
+    if (arr.length) {
+      mn = Math.min(...arr);
+      mx = Math.max(...arr);
+      if (mn === mx) { mn -= 1; mx += 1; }
+      const pad = (mx - mn) * 0.12;
+      mn -= pad;
+      mx += pad;
+    }
+    return { mn, mx, span: Math.abs(mx - mn) };
   }
 
   draw(tMax) {
@@ -314,81 +349,133 @@ class Chart {
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, W, H);
 
-    const padL = 52, padR = 12, padT = 12, padB = 28;
+    // ✅ más espacio, ahora también para eje derecho
+    const padL = 78;
+    const padR = 72;
+    const padT = 34;   // antes 18
+    const padB = 52;   // antes 46
+
     const plotW = W - padL - padR;
     const plotH = H - padT - padB;
 
     const t0 = 0;
     const t1 = Math.max(0.0001, tMax);
 
-    const all = [...this.series.x, ...this.series.v];
-    let yMin = 0, yMax = 1;
-    if (all.length) {
-      yMin = Math.min(...all);
-      yMax = Math.max(...all);
-      if (yMin === yMax) { yMin -= 1; yMax += 1; }
-      const pad = (yMax - yMin) * 0.12;
-      yMin -= pad;
-      yMax += pad;
-    }
+    const rx = this.#rangeWithPadding(this.series.x);
+    const rv = this.#rangeWithPadding(this.series.v);
 
     const xToPx = (t) => padL + ((t - t0) / (t1 - t0)) * plotW;
-    const yToPx = (y) => padT + (1 - (y - yMin) / (yMax - yMin)) * plotH;
+    const yXToPx = (y) => padT + (1 - (y - rx.mn) / (rx.mx - rx.mn)) * plotH;
+    const yVToPx = (y) => padT + (1 - (y - rv.mn) / (rv.mx - rv.mn)) * plotH;
 
-    // grilla
+    // Colores desde CSS
+    const root = getComputedStyle(document.documentElement);
+    const xColor = (root.getPropertyValue("--xLine") || "#6FA12E").trim();
+    const vColor = (root.getPropertyValue("--vLine") || "#C77A2A").trim();
+
+    // Grilla (basada en eje izquierdo para mantener orden visual)
     ctx.strokeStyle = "rgba(2,6,23,.08)";
     ctx.lineWidth = 1;
-    const gridN = 6;
-    for (let i = 0; i <= gridN; i++) {
-      const gx = padL + (plotW * i) / gridN;
+
+    const xTicks = this.#pickTickCount(plotW, 110, 4, 7); // antes 90
+    const yTicks = this.#pickTickCount(plotH, 72, 4, 7);  // antes 60
+
+    for (let i = 0; i <= xTicks; i++) {
+      const gx = padL + (plotW * i) / xTicks;
       ctx.beginPath();
       ctx.moveTo(gx, padT);
       ctx.lineTo(gx, padT + plotH);
       ctx.stroke();
     }
-    for (let i = 0; i <= gridN; i++) {
-      const gy = padT + (plotH * i) / gridN;
+    for (let i = 0; i <= yTicks; i++) {
+      const gy = padT + (plotH * i) / yTicks;
       ctx.beginPath();
       ctx.moveTo(padL, gy);
       ctx.lineTo(padL + plotW, gy);
       ctx.stroke();
     }
 
-    // ejes
-    ctx.strokeStyle = "rgba(2,6,23,.25)";
-    ctx.lineWidth = 1.3;
+    // Ejes
+    ctx.strokeStyle = "rgba(2,6,23,.30)";
+    ctx.lineWidth = 1.4;
+
+    // eje izquierdo
     ctx.beginPath();
     ctx.moveTo(padL, padT);
     ctx.lineTo(padL, padT + plotH);
+    ctx.stroke();
+
+    // eje inferior
+    ctx.beginPath();
+    ctx.moveTo(padL, padT + plotH);
     ctx.lineTo(padL + plotW, padT + plotH);
     ctx.stroke();
 
-    // labels
-    ctx.fillStyle = "#0f172a";
+    // eje derecho
+    ctx.beginPath();
+    ctx.moveTo(padL + plotW, padT);
+    ctx.lineTo(padL + plotW, padT + plotH);
+    ctx.stroke();
+
+     // Labels (títulos) - arriba y separados
+    ctx.fillStyle = "rgba(15,23,42,.92)";
     ctx.font = "12px Arial";
-    ctx.fillText("t (s)", padL + plotW - 28, padT + plotH + 22);
-    ctx.fillText("valor", 10, padT + 12);
 
-    // ticks
-    ctx.fillStyle = "rgba(2,6,23,.75)";
-    for (let i = 0; i <= 4; i++) {
-      const yy = yMin + ((yMax - yMin) * i) / 4;
-      const py = yToPx(yy);
-      ctx.fillText(yy.toFixed(1), 8, py + 4);
+    // título izquierdo arriba (pero sin chocar)
+    ctx.fillText("x (m)", padL - 52, 18);
+
+    // título derecho arriba
+    ctx.fillText("v (m/s)", padL + plotW + 10, 18);
+
+    // título eje X abajo centrado
+    ctx.fillText("t (s)", padL + plotW / 2 - 14, padT + plotH + 38);
+
+    // Ticks
+    ctx.font = "11px Arial";
+    ctx.fillStyle = "rgba(2,6,23,.78)";
+
+    // ticks eje izquierdo (x)
+    const xDec = this.#niceDecimalsForSpan(rx.span);
+    for (let i = 0; i <= yTicks; i++) {
+      const yy = rx.mn + ((rx.mx - rx.mn) * i) / yTicks;
+      const py = yXToPx(yy);
+
+      // ✅ evita que el texto “se pegue” arriba/abajo
+      const yText = clamp(py + 4, padT + 12, padT + plotH - 6);
+
+      ctx.fillText(this.#formatTick(yy, xDec), 12, yText);
     }
-    for (let i = 0; i <= 5; i++) {
-      const tt = t0 + ((t1 - t0) * i) / 5;
+
+    // ticks eje derecho (v)
+    const vDec = this.#niceDecimalsForSpan(rv.span);
+    for (let i = 0; i <= yTicks; i++) {
+      const yy = rv.mn + ((rv.mx - rv.mn) * i) / yTicks;
+      const py = yVToPx(yy);
+
+      // ✅ evita pegado arriba/abajo
+      const yText = clamp(py + 4, padT + 12, padT + plotH - 6);
+
+      ctx.fillText(this.#formatTick(yy, vDec), padL + plotW + 10, yText);
+    }
+
+    // ticks del tiempo
+    const tDec = (t1 >= 100 ? 0 : (t1 >= 10 ? 1 : 2));
+    for (let i = 0; i <= xTicks; i++) {
+      const tt = t0 + ((t1 - t0) * i) / xTicks;
       const px = xToPx(tt);
-      ctx.fillText(tt.toFixed(1), px - 10, padT + plotH + 18);
+      const txt = this.#formatTick(tt, tDec);
+      ctx.fillText(txt, px - 10, padT + plotH + 20);
     }
 
-    // colores desde CSS
-    const root = getComputedStyle(document.documentElement);
-    const xColor = (root.getPropertyValue("--xLine") || "#6FA12E").trim();
-    const vColor = (root.getPropertyValue("--vLine") || "#C77A2A").trim();
+    // Dibujo de líneas
+    this.#drawLine(this.series.t, this.series.x, xToPx, yXToPx, xColor, 2.4);
 
-    this.#drawLine(this.series.t, this.series.x, xToPx, yToPx, xColor, 2.2);
-    this.#drawLine(this.series.t, this.series.v, xToPx, yToPx, vColor, 2.2);
+    // v(t) con su eje derecho (yVToPx)
+    // opcional: estilo punteado para distinguir
+    ctx.save();
+    ctx.setLineDash([6, 4]);
+    this.#drawLine(this.series.t, this.series.v, xToPx, yVToPx, vColor, 2.2);
+    ctx.restore();
   }
 
   #drawLine(tArr, yArr, xToPx, yToPx, color, width) {
@@ -421,7 +508,7 @@ class SimulationEngine {
 
     this.onWorldNotice = opts.onWorldNotice;
     this.onStateChange = opts.onStateChange;
-    this.onStats = opts.onStats; //  nuevo
+    this.onStats = opts.onStats;
 
     this.viewW = opts.viewW ?? 860;
     this.cameraMargin = opts.cameraMargin ?? 320;
@@ -435,7 +522,7 @@ class SimulationEngine {
     this.tMax = 10;
     this.world = null;
 
-    this.timeScale = 1; // speed-up
+    this.timeScale = 1;
     this.rafId = null;
     this.lastTs = 0;
     this.acc = 0;
@@ -464,8 +551,11 @@ class SimulationEngine {
     this.dom.pista.style.left = "0px";
     this.dom.pista.innerHTML = "";
 
+    // ✅ el chart sí se limpia
     this.chart.reset();
-    this.onStats?.({ t: null, x: null, v: null, a: null, type: this.params.type, speed: 1 });
+
+    // ✅ IMPORTANTE: NO tocamos estadística aquí.
+    // Queda “congelada” con el último resultado hasta iniciar una nueva simulación.
   }
 
   startNew(params, tMax) {
@@ -480,7 +570,7 @@ class SimulationEngine {
     const TARGET_REAL_SECONDS = 60;
     if (tMax > 60) {
       const raw = tMax / TARGET_REAL_SECONDS;
-      this.timeScale = clamp(raw, 1, 8); // máximo 8x para que no sea “teleport”
+      this.timeScale = clamp(raw, 1, 8);
     } else {
       this.timeScale = 1;
     }
@@ -501,9 +591,14 @@ class SimulationEngine {
     this.chart.addPoint(0, x0, v0);
     this.chart.draw(this.tMax);
 
+    // ✅ Estadística se setea SOLO cuando inicia nueva simulación
     this.onStats?.({
-      t: 0, x: x0, v: v0, a: this.params.type === "mrv" ? this.params.a : null,
-      type: this.params.type, speed: this.timeScale
+      t: 0,
+      x: x0,
+      v: v0,
+      a: this.params.type === "mrv" ? this.params.a : null,
+      type: this.params.type,
+      speed: this.timeScale
     });
 
     this.setState(STATE.RUNNING);
@@ -534,8 +629,12 @@ class SimulationEngine {
 
     this.acc += dtReal * this.timeScale;
 
+    // ✅ FIX: si hay speed-up, permitir más steps por frame
+    // Esto evita que MRU “parezca” que no acelera.
+    const dynMaxSteps = clamp(Math.round(this.maxStepsPerFrame * this.timeScale), 12, 140);
+
     let steps = 0;
-    while (this.acc >= this.dtSim && steps < this.maxStepsPerFrame && this.state === STATE.RUNNING) {
+    while (this.acc >= this.dtSim && steps < dynMaxSteps && this.state === STATE.RUNNING) {
       const nextT = this.t + this.dtSim;
       this.t = nextT > this.tMax ? this.tMax : +nextT.toFixed(10);
 
@@ -553,8 +652,12 @@ class SimulationEngine {
         this.chart.draw(this.tMax);
 
         this.onStats?.({
-          t: this.t, x, v, a: this.params.type === "mrv" ? this.params.a : null,
-          type: this.params.type, speed: this.timeScale
+          t: this.t,
+          x,
+          v,
+          a: this.params.type === "mrv" ? this.params.a : null,
+          type: this.params.type,
+          speed: this.timeScale
         });
         return;
       }
@@ -567,8 +670,12 @@ class SimulationEngine {
     this.chart.draw(this.tMax);
 
     this.onStats?.({
-      t: this.t, x: xNow, v: vNow, a: this.params.type === "mrv" ? this.params.a : null,
-      type: this.params.type, speed: this.timeScale
+      t: this.t,
+      x: xNow,
+      v: vNow,
+      a: this.params.type === "mrv" ? this.params.a : null,
+      type: this.params.type,
+      speed: this.timeScale
     });
 
     this.rafId = requestAnimationFrame((t) => this.loop(t));
@@ -658,7 +765,6 @@ const dom = {
 };
 
 function decorateInputs() {
-  // tooltip con límites en el propio input
   dom.x0.title = `Límite: ${LIMITS.x0Min} a ${LIMITS.x0Max}`;
   dom.v0.title = `Límite: ${LIMITS.v0Min} a ${LIMITS.v0Max}`;
   dom.a.title  = `Límite: ${LIMITS.aMin} a ${LIMITS.aMax}`;
@@ -774,11 +880,107 @@ function updateSpeedNote(tMax) {
     const s = clamp(tMax / 60, 1, 8).toFixed(1);
     dom.speedNote.textContent = `Aceleración activada: ${s}× (para que no dure más de 1 minuto real).`;
   } else {
-    dom.speedNote.textContent = `Tip: si pasas de 60s, el simulador acelera para no tardar más de 1 minuto real.`;
+    dom.speedNote.textContent = `OJO: si pasas de 60s, el simulador acelera para no tardar más de 1 minuto real.`;
   }
 }
 
+// ============================
+// ✅ Input limiter (NO permite “más números”)
+// ============================
+function sanitizeNumericString(str, allowNegative = true, decimalsMax = 2) {
+  let s = String(str ?? "").trim();
+
+  // Permite solo dígitos, un '-', un '.'
+  let out = "";
+  let hasDot = false;
+  let hasSign = false;
+
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    if (ch === "-" && allowNegative && !hasSign && out.length === 0) {
+      out += ch;
+      hasSign = true;
+      continue;
+    }
+    if (ch === "." && !hasDot) {
+      out += ch;
+      hasDot = true;
+      continue;
+    }
+    if (ch >= "0" && ch <= "9") out += ch;
+  }
+
+  // recorta decimales
+  if (hasDot) {
+    const parts = out.split(".");
+    const left = parts[0];
+    const right = (parts[1] ?? "").slice(0, decimalsMax);
+    out = right.length ? `${left}.${right}` : left; // evita punto colgando
+  }
+  return out;
+}
+
+function enforceMaxDigitsBeforeDecimal(str, maxDigits) {
+  if (!str) return str;
+  const neg = str.startsWith("-");
+  const s = neg ? str.slice(1) : str;
+
+  const parts = s.split(".");
+  const left = parts[0] ?? "";
+  const right = parts[1] ?? null;
+
+  const leftClamped = left.slice(0, maxDigits);
+  const rebuilt = right != null ? `${leftClamped}.${right}` : leftClamped;
+  return neg ? `-${rebuilt}` : rebuilt;
+}
+
+function attachNumericLimiter(input, cfg) {
+  const {
+    min,
+    max,
+    decimals = 1,
+    maxDigits = 4,
+    allowNegative = true,
+  } = cfg;
+
+  const apply = () => {
+    const raw = input.value;
+
+    let s = sanitizeNumericString(raw, allowNegative, decimals);
+    s = enforceMaxDigitsBeforeDecimal(s, maxDigits);
+
+    // si queda solo "-" lo dejamos, si queda "" lo dejamos
+    if (s === "-" || s === "") {
+      input.value = s;
+      return;
+    }
+
+    let n = parseFloat(s);
+    if (!Number.isFinite(n)) {
+      input.value = "";
+      return;
+    }
+
+    // clamp inmediato
+    n = clamp(n, min, max);
+
+    // fijar decimales solo si hay punto o si el step lo exige
+    // (para no “molestar” tanto al escribir)
+    const hasDot = s.includes(".");
+    if (hasDot) {
+      input.value = n.toFixed(decimals);
+    } else {
+      input.value = String(n);
+    }
+  };
+
+  input.addEventListener("input", apply);
+  input.addEventListener("blur", apply);
+}
+
+// ============================
 // Chart + Engine
+// ============================
 const chart = new Chart(dom.chart);
 const getViewW = () => Math.round(dom.simViewport.getBoundingClientRect().width);
 
@@ -788,7 +990,7 @@ const engine = new SimulationEngine({
   viewW: getViewW(),
   cameraMargin: 320,
   dtSim: 0.05,
-  maxStepsPerFrame: 18, // un poquito más para que “fluya” con speed-up
+  maxStepsPerFrame: 18,
   onWorldNotice: (msg) => pushAlert(dom.alertas, msg, "info"),
   onStateChange: (st) => {
     setButtons(st);
@@ -817,7 +1019,23 @@ const tour = new Tour({
   ],
 });
 
+// ============================
+// ✅ UX Reset: inputs a 0, stats NO se borran
+// ============================
+function resetInputsToZero() {
+  dom.x0.value = "0";
+  dom.v0.value = "0";
+
+  // solo si MRV visible, pero igual lo seteamos a 0 por limpieza
+  dom.a.value = "0";
+
+  // tiempo mínimo permitido
+  dom.tiempoTotal.value = "10";
+}
+
+// ============================
 // Eventos UI
+// ============================
 dom.tipo.addEventListener("change", () => {
   applyMovementUI();
   if (engine.state === STATE.RUNNING) pushAlert(dom.alertas, "Reinicia para aplicar el cambio de tipo de movimiento.", "info");
@@ -872,7 +1090,7 @@ dom.btnPause.addEventListener("click", () => {
   }
   engine.pause();
   setButtons(engine.state);
-  pushAlert(dom.alertas, "⏸️ Simulación en pausa. Presiona Reanudar para continuar.", "info");
+  pushAlert(dom.alertas, "Simulación en pausa. Presiona Reanudar para continuar.", "info");
 });
 
 dom.btnReset.addEventListener("click", () => {
@@ -881,6 +1099,10 @@ dom.btnReset.addEventListener("click", () => {
   setButtons(engine.state);
   applyMovementUI();
   applyObjectUI();
+
+  // ✅ inputs a 0 (pero stats quedan)
+  resetInputsToZero();
+
   updateSpeedNote(parseFloat(dom.tiempoTotal.value));
   chart.draw(10);
 });
@@ -892,11 +1114,20 @@ window.addEventListener("resize", () => {
   chart.draw(engine.tMax ?? 10);
 });
 
+// ============================
 // Init
+// ============================
 function init() {
   decorateInputs();
   applyMovementUI();
   applyObjectUI();
+
+  // ✅ Limiters: no dejan poner más números de los permitidos
+  attachNumericLimiter(dom.x0, { min: LIMITS.x0Min, max: LIMITS.x0Max, decimals: 1, maxDigits: 4, allowNegative: true });
+  attachNumericLimiter(dom.v0, { min: LIMITS.v0Min, max: LIMITS.v0Max, decimals: 1, maxDigits: 3, allowNegative: true });
+  attachNumericLimiter(dom.a,  { min: LIMITS.aMin,  max: LIMITS.aMax,  decimals: 1, maxDigits: 3, allowNegative: true });
+  attachNumericLimiter(dom.tiempoTotal, { min: LIMITS.tMin, max: LIMITS.tMax, decimals: 1, maxDigits: 3, allowNegative: false });
+
   engine.resetScene();
   setButtons(engine.state);
   updateSpeedNote(parseFloat(dom.tiempoTotal.value));

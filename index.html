@@ -12,8 +12,8 @@
     <div class="topbar-left">
       <div class="brand-dot"></div>
       <div class="brand">
-        <div class="brand-title">Simulador MRU y MRV</div>
-        <div class="brand-sub">Movimiento Rectilíneo con animación + gráficas</div>
+        <div class="brand-title">Simuladorcito</div>
+        <div class="brand-sub">Movimiento Rectilíneo Uniforme y Movimiento Rectilíneo Variado</div>
       </div>
     </div>
 
@@ -24,10 +24,9 @@
 
   <main class="layout">
 
-    <!-- PANEL CONTROLES -->
     <section class="card panel" id="panelControles">
       <div class="panelHead">
-        <div class="card-title">Controles</div>
+        <div class="card-title">Campos</div>
         <div class="panelHint">Límites visibles para evitar errores</div>
       </div>
 
@@ -86,7 +85,7 @@
           <span class="limit">0.1 a 120</span>
         </div>
         <input type="number" id="tiempoTotal" value="10" step="0.1" min="0.1" max="120">
-        <div class="fieldNote" id="speedNote">Tip: si pasas de 60s, el simulador acelera para no tardar más de 1 minuto real.</div>
+        <div class="fieldNote" id="speedNote">OJO: si pasas de 60s, el simulador acelera para no tardar más de 1 minuto real.</div>
       </div>
 
       <div id="alertas" class="alertas" aria-live="polite"></div>
@@ -105,7 +104,6 @@
         <div class="simHead">
           <div>
             <div class="card-title">Simulación</div>
-            <div class="muted">Pista con cámara + objeto animado</div>
           </div>
           <div class="simBadges">
             <span class="badge" id="badgeMode">MRU</span>

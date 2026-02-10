@@ -370,7 +370,6 @@ body{
   position:relative;
   z-index:1;
 }
-.statIcon{ font-size: 14px; }
 .statLabel{ font-size: 11px; letter-spacing:.2px; }
 
 .statValue{
@@ -423,6 +422,9 @@ body{
   border-radius: 16px;
   border: 1px solid rgba(15,23,42,.06);
   background:#fff;
+
+  /* leve mejora de nitidez visual */
+  image-rendering: auto;
 }
 
 /* TOUR */
